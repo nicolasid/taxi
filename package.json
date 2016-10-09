@@ -1,0 +1,14 @@
+{
+  "scripts": {
+    "start": "node index.js"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "csvtojson": "^1.0.3",
+    "express": "^4.14.0",
+    "fs": "0.0.1-security",
+    "jsonfile": "^2.4.0",
+    "routific": "0.0.2",
+    "xmlhttprequest": "^1.8.0"
+  }
+}

@@ -3,8 +3,11 @@ var express = require('express');
 var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 var app = express();
 
-app.listen(3000, function () {
-  console.log('Example app listening on port 3000!');
+var server_port = process.env.OPENSHIFT_NODEJS_PORT || 8080
+var server_ip_address = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1'
+ 
+app.listen(server_port, server_ip_address, function () {
+    console.log( "Listening on " + server_ip_address + ", port " + server_port )
 });
 
 var fs = require('fs'); // this engine requires the fs module
@@ -69,7 +72,7 @@ converterVehicle.on("record_parsed", function (jsonObj) {
     problem.visits.push(order);
     locationMapping[jsonObj['SG Postal Code']] = { "lat" : jsonObj['Latitude'], "long" : jsonObj['Longtitude']};
 });
-require("fs").createReadStream("../data/vrptw_8.csv").pipe(converterVehicle);
+require("fs").createReadStream("./data/vrptw_8.csv").pipe(converterVehicle);
 
 var converterFleet = new Converter({});
 //record_parsed will be emitted each csv row being processed 
@@ -87,7 +90,7 @@ converterFleet.on("record_parsed", function (js) {
 
 // when parsing the vehicle finished then start the fleet data parsing
 converterVehicle.on("end_parsed", function (jsonArray) {
-    require("fs").createReadStream("../data/Fleet.csv").pipe(converterFleet);
+    require("fs").createReadStream("./data/Fleet.csv").pipe(converterFleet);
 });
 
 // when fleet data parsing finished then call the Routific API
