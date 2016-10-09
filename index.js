@@ -32,8 +32,6 @@ function lookupAddress(latitude, longtitude) {
 }
 
 var Routific = require("routific");
-// Load the demo data. https://routific.com/demo.json
-var data = require('./demo.json');
 var token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJfaWQiOiI1NDFiNzU2MWZkMmJlMzA4MDAyY2VlYmIiLCJpYXQiOjE0MTEwODU2NjV9.5jb_61ykdHA2RyhfVWFMowb2oSB9gWAY4mPKHk1iCiI";
 
 var client = new Routific.Client({token: token});
