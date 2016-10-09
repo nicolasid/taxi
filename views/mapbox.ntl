@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title></title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.25.1/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.25.1/mapbox-gl.css' rel='stylesheet' />
+    <style>
+        body { margin:0; padding:0; }
+        #map { position:absolute;
+          top:0; bottom:0; width:100%;
+          height: 600px;
+        }
+        #menu {
+            background: #fff;
+            position: absolute;
+            z-index: 1;
+            top: 10px;
+            right: 10px;
+            border-radius: 3px;
+            width: 100px;
+            border: 1px solid rgba(0,0,0,0.4);
+            font-family: 'Open Sans', sans-serif;
+        }
+        #menu a {
+            font-size: 13px;
+            color: #404040;
+            display: block;
+            margin: 0;
+            padding: 0;
+            padding: 10px;
+            text-decoration: none;
+            border-bottom: 1px solid rgba(0,0,0,0.25);
+            text-align: center;
+        }
+
+        #menu a:last-child {
+            border: none;
+        }
+
+        #menu a:hover {
+            background-color: #f8f8f8;
+            color: #404040;
+        }
+
+        #menu a.active {
+            background-color: #3887be;
+            color: #ffffff;
+        }
+
+        #menu a.active:hover {
+            background: #3074a4;
+        }
+    </style>
+</head>
+<body>
+
+<nav id="menu"></nav>
+<div id='map'></div>
+<script>
+
+mapboxgl.accessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpbG10dnA3NzY3OTZ0dmtwejN2ZnUycjYifQ.1W5oTOnWXQ9R1w8u3Oo1yA';
+var map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/streets-v9',
+    center: [103.810021,1.361409],
+    zoom: 11
+});
+
+var routingOutput = #routingOutput#;
+
+var routeLayerIds = [];
+var pointLayerIds = [];
+var colors = ['#1F77B4', '#FF7F0E', '#2CA02C', '#D62728', '#9467BD',
+            '#8C564B', '#CFECF9', '#7F7F7F', '#BCBD22', '#17BECF',
+            'purple', 'blue', 'orange', 'green', 'yellow'];
+map.on('load', function () {
+    // iterate through the driver
+    var idx = 0;
+    for (driver in routingOutput['solution']) {
+        // record the driver for defining layers
+        routeLayerIds.push(driver);
+        pointLayerIds.push(driver + "points");
+        var coordinates = [];
+        var features = [];
+        if (routingOutput['solution'][driver].length <= 2) {
+            var aFeature = {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": routingOutput['solution'][driver][0]['geocode']
+                },
+                "properties": {
+                    "description" : "<strong>Depot</strong><br/>Address : " + routingOutput['solution'][driver][0]['location_name'] + "<br/>Arrival Time : " + routingOutput['solution'][driver][0]['arrival_time'],
+                    "title": 0,
+                    "icon": "harbor"
+                }
+            };
+            features.push(aFeature);
+            coordinates.push(routingOutput['solution'][driver][0]['geocode']);
+        } else {
+            for (dest in routingOutput['solution'][driver]) {
+                var description = "";
+                if (routingOutput['solution'][driver][dest]['location_id'] == 'depot') {
+                    description = "<strong>Depot</strong><br/>Address : " + routingOutput['solution'][driver][dest]['location_name'] + "<br/>Arrival Time : " + routingOutput['solution'][driver][dest]['arrival_time'] + "<br/>Fleet : " + driver;
+                } else {
+                    description = "Delivery Sequence# : " + dest + "<br/>Address : " + routingOutput['solution'][driver][dest]['location_name'] + "<br/>Arrival Time : " + routingOutput['solution'][driver][dest]['arrival_time'] + "<br/>Finish Time : " + routingOutput['solution'][driver][dest]['finish_time'] + "<br/>Fleet : " + driver;
+                }
+                var aFeature = {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": routingOutput['solution'][driver][dest]['geocode']
+                    },
+                    "properties": {
+                        "description" : description,
+                        "title": dest,
+                        "icon": "star"
+                    }
+                };
+                features.push(aFeature);
+                coordinates.push(routingOutput['solution'][driver][dest]['geocode']);
+            }
+        }
+        // add source for each driver
+        map.addSource(driver, {
+            "type": "geojson",
+            "data": {
+                "type": "Feature",
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": coordinates
+                }
+            }
+        });
+        map.addSource(driver + "points", {
+            "type": "geojson",
+            "data": {
+                "type": "FeatureCollection",
+                "features": features
+            }
+        });
+
+        map.addLayer({
+            "id": driver,
+            "type": "line",
+            "source": driver,
+            "layout": {
+                'visibility': 'none',
+                "line-join": "bevel",
+                "line-cap": "round"
+            },
+            "paint": {
+                "line-color": colors[idx],
+                "line-width": 2
+            }
+        });
+
+        map.addLayer({
+            "id": driver + "points",
+            "type": "symbol",
+            "source": driver + "points",
+            "layout": {
+                'visibility': 'none',
+                "icon-image": "{icon}-15",
+                "icon-allow-overlap": true,
+                "text-field": "{title}",
+                "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+                "text-offset": [0, 0.6],
+                "text-anchor": "top"
+            }
+        });
+        idx += 1;
+    }
+
+    // Populate the menu to enable/disable the layers
+    for (var i = 1; i <= routeLayerIds.length; i++) {
+        var link = document.createElement('a');
+        link.href = 'Driver_' + i;
+        link.className = '';
+        link.textContent = "Driver " + i;
+
+        link.onclick = function (e) {
+            var clickedLayer = this.getAttribute("href");
+            e.preventDefault();
+            e.stopPropagation();
+
+            var visibility = map.getLayoutProperty(clickedLayer, 'visibility');
+
+            if (visibility === 'visible') {
+                map.setLayoutProperty(clickedLayer, 'visibility', 'none');
+                map.setLayoutProperty(clickedLayer + "points", 'visibility', 'none');
+                this.className = '';
+            } else {
+                this.className = 'active';
+                map.setLayoutProperty(clickedLayer, 'visibility', 'visible');
+                map.setLayoutProperty(clickedLayer + "points", 'visibility', 'visible');
+            }
+        };
+
+        var layers = document.getElementById('menu');
+        layers.appendChild(link);
+    }
+});
+
+// Show information when mouse hovers to certains delivery point
+var popup = new mapboxgl.Popup({
+    closeButton: false,
+    closeOnClick: false
+});
+
+// Use the same approach as above to indicate that the symbols are clickable
+// by changing the cursor style to 'pointer'.
+map.on('mousemove', function (e) {
+    var features = map.queryRenderedFeatures(e.point, { layers: pointLayerIds });
+    // Change the cursor style as a UI indicator.
+    map.getCanvas().style.cursor = (features.length) ? 'pointer' : '';
+
+    if (!features.length) {
+        popup.remove();
+        return;
+    }
+
+    var feature = features[0];
+
+    // Populate the popup and set its coordinates
+    // based on the feature found.
+    popup.setLngLat(feature.geometry.coordinates)
+        .setHTML(feature.properties.description)
+        .addTo(map);
+});
+
+</script>
+
+</body>
+</html>
