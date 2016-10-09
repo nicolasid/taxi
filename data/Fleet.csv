@@ -1,0 +1,16 @@
+Vehicle,Capacity,Shift start,Shift end
+Driver_1,8,08:00,15:00
+Driver_2,8,08:00,15:00
+Driver_3,8,08:00,15:00
+Driver_4,8,08:00,15:00
+Driver_5,8,08:00,15:00
+Driver_6,8,08:00,15:00
+Driver_7,8,14:00,21:00
+Driver_8,8,14:00,21:00
+Driver_9,8,14:00,21:00
+Driver_10,8,14:00,21:00
+Driver_11,15,08:00,15:00
+Driver_12,15,08:00,15:00
+Driver_13,15,08:00,15:00
+Driver_14,15,14:00,21:00
+Driver_15,15,14:00,21:00

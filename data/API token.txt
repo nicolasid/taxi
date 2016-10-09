@@ -1,0 +1,3 @@
+Usage token which should be included in the Header of each API call: 
+
+"Authorization: bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJfaWQiOiI1NDFiNzU2MWZkMmJlMzA4MDAyY2VlYmIiLCJpYXQiOjE0MTEwODU2NjV9.5jb_61ykdHA2RyhfVWFMowb2oSB9gWAY4mPKHk1iCiI"
