@@ -162,18 +162,19 @@ converterFleet.on("end_parsed", function (jsonArray) {
         res.render('mapbox', { routingOutput: JSON.stringify(defaultSolution, null, 2), outputDetail: outputMessage});
     });
     app.post('/', function (req, res) {
+        var vrp = new Routific.Vrp();
+        vrp.data = JSON.parse(JSON.stringify(defaultVrp.data));
         var outputMessage = "Route is generated based on " + req.body.orderTime + " minute(s) order time and traffic is " + req.body.traffic;
-        if (!req.body.orderTime) {
+        if (req.body.orderTime) {
+            console.log("message = " + outputMessage);
+            // update the order time based on input
+            for (order in vrp.data.visits) {
+                vrp.data.visits[order]['duration'] = req.body.orderTime;
+            }
+        } else {
             outputMessage = "Route is generated based on default order time and traffic is " + req.body.traffic;
         }
-        console.log("message = " + outputMessage);
-        var vrp = new Routific.Vrp();
-        vrp.data = JSON.parse(JSON.stringify(defaultVrp.data))
-        vrp.addOption("traffic", req.body.traffic);
-        // update the order time based on input
-        for (order in defaultVrp.data.visits) {
-            defaultVrp.data.visits[order]['duration'] = req.body.orderTime;
-        }
+        vrp.addOption("traffic", req.body.traffic);    
         findBestRoute(vrp, outputMessage, res);
     });
 });
