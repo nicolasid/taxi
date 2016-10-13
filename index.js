@@ -17,7 +17,7 @@ app.engine('ntl', function (filePath, options, callback) { // define the templat
   fs.readFile(filePath, function (err, content) {
     if (err) return callback(new Error(err));
     // this is an extremely simple template engine
-    var rendered = content.toString().replace('#routingOutput#', options.routingOutput).replace('#outputDetail#', options.outputDetail);
+    var rendered = content.toString().replace('#routingOutput#', options.routingOutput).replace('#outputDetail#', options.outputDetail).replace('#jsonOutput#', options.jsonOutput).replace('#jsonInput#', options.jsonInput);
     return callback(null, rendered);
   });
 });
@@ -116,12 +116,16 @@ converterVehicle.on("record_parsed", function (jsonObj) {
     order['location']['name'] = lookupAddress(jsonObj['Latitude'], jsonObj['Longtitude']);
     order['location']['lat'] = jsonObj['Latitude'];
     order['location']['lng'] = jsonObj['Longtitude'];
+    order['load'] = jsonObj['Load'];
     if (jsonObj['Earliest']) order['start'] = jsonObj['Earliest'];
     if (jsonObj['Latest']) order['end'] = jsonObj['Latest'];
     order['duration'] = jsonObj['Duration'];
     if (depot == null) {
-        depot = order['location'];
+        depot = {};
         depot['id'] = "depot";
+        depot['name'] = order['location']['name'];
+        depot['lat'] = order['location']['lat'];
+        depot['lng'] = order['location']['lng'];
         locationMapping['depot'] = { "lat" : jsonObj['Latitude'], "long" : jsonObj['Longtitude']};
     };
     // console.log("Add visit " + order['location']['name']);
@@ -158,13 +162,13 @@ converterFleet.on("end_parsed", function (jsonArray) {
     findBestRoute(defaultVrp, "Route is generated based on default order time and traffic is slow", null);
     // define root handler
     app.get('/', function (req, res) {
-        var outputMessage = "Route is generated based on default order time and traffic is slow";
+        var outputMessage = "Route is generated based on default order time and traffic is slow with <a href='/output' target='_blank'>output result</a>";
         res.render('mapbox', { routingOutput: JSON.stringify(defaultSolution, null, 2), outputDetail: outputMessage});
     });
     app.post('/', function (req, res) {
         var vrp = new Routific.Vrp();
         vrp.data = JSON.parse(JSON.stringify(defaultVrp.data));
-        var outputMessage = "Route is generated based on " + req.body.orderTime + " minute(s) order time and traffic is " + req.body.traffic;
+        var outputMessage = "Route is generated based on " + req.body.orderTime + " minute(s) order time and traffic is " + req.body.traffic + "with <a href='/output' target='_blank'>output result</a>";
         if (req.body.orderTime) {
             console.log("message = " + outputMessage);
             // update the order time based on input
@@ -172,10 +176,14 @@ converterFleet.on("end_parsed", function (jsonArray) {
                 vrp.data.visits[order]['duration'] = req.body.orderTime;
             }
         } else {
-            outputMessage = "Route is generated based on default order time and traffic is " + req.body.traffic;
+            outputMessage = "Route is generated based on default order time and traffic is " + req.body.traffic + "with <a href='/output' target='_blank'>output result</a>";
         }
         vrp.addOption("traffic", req.body.traffic);    
         findBestRoute(vrp, outputMessage, res);
     });
+});
+
+app.get('/output', function (req, res) {
+    res.render('output', { "jsonOutput" : jsonfile.readFileSync("routingOutput.json"), "jsonInput" : jsonfile.readFileSync("routingInput.json") });
 });
 

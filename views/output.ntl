@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+  <head>
+      <title>Output</title>
+      <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.0.0/jquery.min.js"></script>
+      <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+      <script type="text/javascript">
+        // Builds the HTML Table out of output.
+        function buildHtmlTable(inputSelector, outputSelector) {
+          // Build the input data
+          var inputData = #jsonInput#;
+          var visits = inputData['data']['visits'];
+          var tableInput$ = $('<table/>');
+          tableInput$.attr('class', 'table table-striped');
+          var headerTr$ = $('<tr/>');
+          headerTr$.append($('<th/>').html("Postal Code"));
+          headerTr$.append($('<th/>').html("Address"));
+          headerTr$.append($('<th/>').html("Start Time"));
+          headerTr$.append($('<th/>').html("End Time"));
+          headerTr$.append($('<th/>').html("Duration"));
+          headerTr$.append($('<th/>').html("Load"));
+          tableInput$.append($('<thead/>').append(headerTr$));
+          tableInput$.append($('<tbody/>'));
+          for (destId in visits) {
+            var row$ = $('<tr/>');
+            row$.append($('<td/>').html(destId));
+            row$.append($('<td/>').html(visits[destId]['location']['name']));
+            row$.append($('<td/>').html(visits[destId]['start']));
+            row$.append($('<td/>').html(visits[destId]['end']));
+            row$.append($('<td/>').html(visits[destId]['duration']));
+            row$.append($('<td/>').html(visits[destId]['load']));
+            tableInput$.append(row$);
+          }
+          $(inputSelector).append(tableInput$);
+
+          // Build the output result
+          var totalDelivery = 0;
+          var alloutput = #jsonOutput#;
+          var output = alloutput.solution;
+          var table$ = $('<table/>');
+          table$.attr('class', 'table table-striped');
+          headerTr$ = $('<tr/>');
+          headerTr$.append($('<th/>').html("Driver"));
+          headerTr$.append($('<th/>').html("Postal Code"));
+          headerTr$.append($('<th/>').html("Address"));
+          headerTr$.append($('<th/>').html("Arrival Time"));
+          headerTr$.append($('<th/>').html("Finish Time"));
+          headerTr$.append($('<th/>').html("Earliest Delivery"));
+          headerTr$.append($('<th/>').html("Latest Delivery"));
+          headerTr$.append($('<th/>').html("Duration"));
+          headerTr$.append($('<th/>').html("Load"));
+          table$.append($('<thead/>').append(headerTr$));
+          table$.append($('<tbody/>'));
+          var keys = Object.keys(output);
+          for (var k = keys.length-1; k >= 0; k--) {
+              var delivery = visits[output[keys[k]][0]['location_id']];
+              if (output[keys[k]][0]['location_id'] == 'depot') {
+                delivery = visits[Object.keys(visits)[0]];
+              }
+              var row$ = $('<tr/>');
+              var col$ = $('<td/>');
+              // only print one row as 
+              //if (output[keys[k]].length > 2) {
+                col$.attr('rowspan', output[keys[k]].length);
+              //}
+              row$.append(col$.html(keys[k]));
+              row$.append($('<td/>').html(output[keys[k]][0]['location_id']));
+              row$.append($('<td/>').html(delivery['location']['name']));
+              row$.append($('<td/>').html(output[keys[k]][0]['arrival_time']));
+              row$.append($('<td/>').html(output[keys[k]][0]['finish_time']));
+              row$.append($('<td/>').html(delivery['start']));
+              row$.append($('<td/>').html(delivery['end']));
+              row$.append($('<td/>').html(delivery['duration']));
+              row$.append($('<td/>').html(delivery['load']));
+              // add the first row that has the Driver coloumn
+              table$.append(row$);
+              // iterate through all the delivery points
+              //if (output[keys[k]].length > 2) {
+                for (i=1; i < output[keys[k]].length; i++) {
+                  console.log(output[keys[k]][i]['location_id']);
+                  delivery = visits[output[keys[k]][i]['location_id']];
+                  if (output[keys[k]][i]['location_id'] == 'depot') {
+                    delivery = visits[Object.keys(visits)[0]];
+                  }
+                  var row$ = $('<tr/>');
+                  row$.append($('<td/>').html(output[keys[k]][i]['location_id']));
+                  row$.append($('<td/>').html(delivery['location']['name']));
+                  row$.append($('<td/>').html(output[keys[k]][i]['arrival_time']));
+                  row$.append($('<td/>').html(output[keys[k]][i]['finish_time']));
+                  row$.append($('<td/>').html(delivery['start']));
+                  row$.append($('<td/>').html(delivery['end']));
+                  row$.append($('<td/>').html(delivery['duration']));
+                  row$.append($('<td/>').html(delivery['load']));
+                  table$.append(row$);
+                }
+                totalDelivery += (output[keys[k]].length - 2);
+              //}
+          }
+          $(outputSelector).append(table$);
+        }
+
+      </script>
+  </head>
+  <body onLoad="buildHtmlTable('#input', '#output')">
+      <!-- Nav tabs -->
+      <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item">
+          <a class="nav-link active" data-toggle="tab" href="#input" role="tab">Input Data</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-toggle="tab" href="#output" role="tab">Optimization Result</a>
+        </li>
+      </ul>
+
+      <!-- Tab panes -->
+      <div class="tab-content">
+        <div class="tab-pane active" id="input" role="tabpanel"></div>
+        <div class="tab-pane" id="output" role="tabpanel"></div>
+      </div>
+  </body>
+</html>
