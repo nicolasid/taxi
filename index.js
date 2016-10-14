@@ -162,13 +162,13 @@ converterFleet.on("end_parsed", function (jsonArray) {
     findBestRoute(defaultVrp, "Route is generated based on default order time and traffic is slow", null);
     // define root handler
     app.get('/', function (req, res) {
-        var outputMessage = "Route is generated based on default order time and traffic is slow with <a href='/output' target='_blank'>output result</a>";
+        var outputMessage = "Route is generated based on default order time and traffic is slow with <a href='/defaultoutput' target='_blank'>output result</a>";
         res.render('mapbox', { routingOutput: JSON.stringify(defaultSolution, null, 2), outputDetail: outputMessage});
     });
     app.post('/', function (req, res) {
         var vrp = new Routific.Vrp();
         vrp.data = JSON.parse(JSON.stringify(defaultVrp.data));
-        var outputMessage = "Route is generated based on " + req.body.orderTime + " minute(s) order time and traffic is " + req.body.traffic + "with <a href='/output' target='_blank'>output result</a>";
+        var outputMessage = "Route is generated based on " + req.body.orderTime + " minute(s) order time and traffic is " + req.body.traffic + " with <a href='/output' target='_blank'>output result</a>";
         if (req.body.orderTime) {
             console.log("message = " + outputMessage);
             // update the order time based on input
@@ -176,7 +176,7 @@ converterFleet.on("end_parsed", function (jsonArray) {
                 vrp.data.visits[order]['duration'] = req.body.orderTime;
             }
         } else {
-            outputMessage = "Route is generated based on default order time and traffic is " + req.body.traffic + "with <a href='/output' target='_blank'>output result</a>";
+            outputMessage = "Route is generated based on default order time and traffic is " + req.body.traffic + " with <a href='/output' target='_blank'>output result</a>";
         }
         vrp.addOption("traffic", req.body.traffic);    
         findBestRoute(vrp, outputMessage, res);
@@ -187,3 +187,6 @@ app.get('/output', function (req, res) {
     res.render('output', { "jsonOutput" : jsonfile.readFileSync("routingOutput.json"), "jsonInput" : jsonfile.readFileSync("routingInput.json") });
 });
 
+app.get('/defaultoutput', function (req, res) {
+    res.render('output', { "jsonOutput" : JSON.stringify(defaultSolution, null, 2), "jsonInput" : JSON.stringify(defaultVrp) });
+});
