@@ -11,14 +11,14 @@
     <style>
         body { margin:0; padding:0; }
         #map { 
-          position:absolute; top:45px; width:100%; height: 90%;
+          position:absolute; left:22%; width:78%; height: 100%;
         }
         #menu {
             background: #fff;
             position: absolute;
             z-index: 1;
             top: 55px;
-            right: 25px;
+            right: 1%;
             border-radius: 3px;
             width: 100px;
             border: 1px solid rgba(0,0,0,0.4);
@@ -55,10 +55,12 @@
         }
 
      .sk-circle {
-      margin: 120px auto;
-      width: 120px;
-      height: 120px;
-      position: relative; }
+        margin: 120px auto;
+        width: 120px;
+        height: 120px;
+        position: absolute;
+        left: 50%;
+        top: 10%; }
       .sk-circle .sk-child {
         width: 100%;
         height: 100%;
@@ -170,38 +172,61 @@
     </style>
 </head>
 <body>
-    <form id="routeParam" class="form-inline" style="position:absolute; top:5px; left:20px;" action="/" method="post">
-        <div class="form-group">
-            <label for="inputsm" class="col-form-label-sm">Order Time</label>
-        </div>
-        <div class="form-group">
-            <div class="col-xs-2">
-                <input type="text" class="form-control input-sm" name="orderTime" placeholder="minutes">
+    <div style="position:absolute; width:24%; left:1%;">
+        <h3>Route Finder</h3>
+        <form id="routeParam" style="padding-top:2%;" method="post" autocomplete="off">
+            <div class="form-group row">
+                <label class="col-sm-4 col-form-label">Delivery Time</label>
+                <div class="col-sm-5">
+                    <input type="text" class="form-control input-sm" name="orderTime" placeholder="minutes">
+                </div>
             </div>
-        </div>
-        <div class="form-group">
-            <div class="form-check">
-                <label class="form-check-inline">
-                    <input class="form-check-input" type="radio" name="traffic" value="fast" checked>
-                    Fast
-                </label>
-                <label class="form-check-inline">
-                    <input class="form-check-input" type="radio" name="traffic" value="slow">
+            <div class="form-group row" style="border-top:1px solid #ddd;">
+                <p style="padding-top:15px; font-style: italic; font-size: 9pt;" class="col-sm-10 col-form-label-sm">Adjust shift start and end by putting positive value to move the shift time forward and negative value otherwise</p>
+            </div>
+            <div class="form-group row">
+                <label class="col-sm-4 col-form-label">Shift Start</label>
+                <div class="col-sm-5">
+                    <input type="text" class="form-control input-sm" name="shiftStart" placeholder="minutes">
+                </div>
+            </div>
+            <div class="form-group row">
+                <label class="col-sm-4 col-form-label">Shift End</label>
+                <div class="col-sm-5">
+                    <input type="text" class="form-control input-sm" name="shiftEnd" placeholder="minutes">
+                </div>
+            </div>
+            <fieldset class="form-group row" style="border-top:1px solid #ddd; padding-top:15px">
+              <label class="col-form-label col-sm-4">Traffic</label>
+              <div class="col-sm-5">
+                <div class="form-check">
+                  <label class="form-check-label">
+                    <input class="form-check-input" type="radio" name="traffic" value="slow" checked>
                     Slow
-                </label>
+                  </label>
+                </div>
+                <div class="form-check">
+                  <label class="form-check-label">
+                    <input class="form-check-input" type="radio" name="traffic" value="fast">
+                    Fast
+                  </label>
+                </div>
+              </div>
+            </fieldset>
+            <div class="form-group row">
+                <div class="offset-sm-4 col-sm-5">
+                    <button type="submit" class="btn btn-primary" id="findButton">Find Best Route</button>
+                </div>
             </div>
-        </div>
-        <div class="form-group">
-            <button type="submit" class="btn btn-primary" id="findButton">Find Best Route</button>
-        </div>
-        <div class="form-group" id="outputMessage">
-            <p class="form-control-static"> #outputDetail#</p>
-        </div>
-    </form>
+            <div class="form-group row" style="border-top:1px solid #ddd;">
+                <p style="padding-top:15px" class="col-sm-10 col-form-label" id="outputDetail">#outputDetail#</p>
+            </div>
+        </form>
+    </div>
 
 <nav id="menu"></nav>
 <div id='map'></div>
-<div id='loading' class="sk-circle" style="display: none; top:30px;">
+<div id='loading' class="sk-circle" style="display: none;">
     <div class="sk-circle1 sk-child"></div>
     <div class="sk-circle2 sk-child"></div>
     <div class="sk-circle3 sk-child"></div>
@@ -216,185 +241,221 @@
     <div class="sk-circle12 sk-child"></div>
 </div>
 <script>
+    // Initialize map that will used as the main map
+    // The source and layer will be updated later when query form is submitted
+    var newMap = initMap();
+    newMap.on('load', function () {
+        var routingOutput = #routingOutput#;
+        loadMap(this, routingOutput);
+    });
 
-$( "#routeParam" ).submit(function() {
-    $( "#menu" ).hide();
-    $( "#map" ).hide();
-    $( "#outputMessage" ).hide();
-    $( "#loading" ).show();
-    $( "findButton" ).prop("disabled", true);
-});
+    $( "#routeParam" ).submit(function(e) {
+        e.preventDefault(); // Prevent Default Submission
+        $( "#menu" ).hide();
+        $( "#map" ).hide();
+        $( "#outputDetail" ).html("Finding ....");
+        $( "#loading" ).show();
+        $( "findButton" ).prop("disabled", true);
+        $.ajax({
+            type: "POST",
+            url: "/findroute",
+            data: $("#routeParam").serialize(),
+            dataType: 'html',
+            success: function(data) {
+                var result = JSON.parse(data);
+                $( "#outputDetail" ).html(result['outputDetail']);
+                $( "#loading" ).hide();
+                $( "#menu" ).show();
+                $( "#map" ).show();
+                // reload map with updated data
+                loadMap(newMap, result['routingOutput']);
+           }
+        });
+    });
 
-mapboxgl.accessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpbG10dnA3NzY3OTZ0dmtwejN2ZnUycjYifQ.1W5oTOnWXQ9R1w8u3Oo1yA';
-var map = new mapboxgl.Map({
-    container: 'map',
-    style: 'mapbox://styles/mapbox/streets-v9',
-    center: [103.810021,1.361409],
-    zoom: 11
-});
+    var colors = ['#1F77B4', '#FF7F0E', '#2CA02C', '#D62728', '#9467BD',
+                '#8C564B', '#215AB7', '#7F7F7F', '#BCBD22', '#17BECF',
+                'purple', 'blue', 'orange', 'green', 'yellow'];
 
-var routingOutput = #routingOutput#;
+    function initMap() {
+        mapboxgl.accessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpbG10dnA3NzY3OTZ0dmtwejN2ZnUycjYifQ.1W5oTOnWXQ9R1w8u3Oo1yA';
+        var aMap = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v9',
+            center: [103.810021,1.361409],
+            zoom: 11
+        });
+        return aMap;
+    }
 
-var routeLayerIds = [];
-var pointLayerIds = [];
-var colors = ['#1F77B4', '#FF7F0E', '#2CA02C', '#D62728', '#9467BD',
-            '#8C564B', '#215AB7', '#7F7F7F', '#BCBD22', '#17BECF',
-            'purple', 'blue', 'orange', 'green', 'yellow'];
-map.on('load', function () {
-    // iterate through the driver
-    var idx = 0;
-    for (driver in routingOutput['solution']) {
-        // record the driver for defining layers
-        routeLayerIds.push(driver);
-        pointLayerIds.push(driver + "points");
-        var coordinates = [];
-        var features = [];
-        if (routingOutput['solution'][driver].length <= 2) {
-            var aFeature = {
-                "type": "Feature",
-                "geometry": {
-                    "type": "Point",
-                    "coordinates": routingOutput['solution'][driver][0]['geocode']
-                },
-                "properties": {
-                    "description" : "<strong>Depot</strong><br/>Address : " + routingOutput['solution'][driver][0]['location_name'] + "<br/>Arrival Time : " + routingOutput['solution'][driver][0]['arrival_time'],
-                    "title": 0,
-                    "icon": "harbor"
-                }
-            };
-            features.push(aFeature);
-            coordinates.push(routingOutput['solution'][driver][0]['geocode']);
-        } else {
-            for (dest in routingOutput['solution'][driver]) {
-                var description = "";
-                if (routingOutput['solution'][driver][dest]['location_id'] == 'depot') {
-                    description = "<strong>Depot</strong><br/>Address : " + routingOutput['solution'][driver][dest]['location_name'] + "<br/>Arrival Time : " + routingOutput['solution'][driver][dest]['arrival_time'] + "<br/>Fleet : " + driver;
-                } else {
-                    description = "Delivery Sequence# : " + dest + "<br/>Address : " + routingOutput['solution'][driver][dest]['location_name'] + "<br/>Arrival Time : " + routingOutput['solution'][driver][dest]['arrival_time'] + "<br/>Finish Time : " + routingOutput['solution'][driver][dest]['finish_time'] + "<br/>Fleet : " + driver;
-                }
+    function loadMap(map, routingOutput) {
+        var routeLayerIds = [];
+        var pointLayerIds = [];
+        // iterate through the driver
+        var idx = 0;
+        for (driver in routingOutput['solution']) {
+            // record the driver for defining layers
+            routeLayerIds.push(driver);
+            pointLayerIds.push(driver + "points");
+            var coordinates = [];
+            var features = [];
+            if (routingOutput['solution'][driver].length <= 2) {
                 var aFeature = {
                     "type": "Feature",
                     "geometry": {
                         "type": "Point",
-                        "coordinates": routingOutput['solution'][driver][dest]['geocode']
+                        "coordinates": routingOutput['solution'][driver][0]['geocode']
                     },
                     "properties": {
-                        "description" : description,
-                        "title": dest,
-                        "icon": "star"
+                        "description" : "<strong>Depot</strong><br/>Address : " + routingOutput['solution'][driver][0]['location_name'] + "<br/>Arrival Time : " + routingOutput['solution'][driver][0]['arrival_time'],
+                        "title": 0,
+                        "icon": "harbor"
                     }
                 };
                 features.push(aFeature);
-                coordinates.push(routingOutput['solution'][driver][dest]['geocode']);
-            }
-        }
-        // add source for each driver
-        map.addSource(driver, {
-            "type": "geojson",
-            "data": {
-                "type": "Feature",
-                "geometry": {
-                    "type": "LineString",
-                    "coordinates": coordinates
+                coordinates.push(routingOutput['solution'][driver][0]['geocode']);
+            } else {
+                for (dest in routingOutput['solution'][driver]) {
+                    var description = "";
+                    if (routingOutput['solution'][driver][dest]['location_id'] == 'depot') {
+                        description = "<strong>Depot</strong><br/>Address : " + routingOutput['solution'][driver][dest]['location_name'] + "<br/>Arrival Time : " + routingOutput['solution'][driver][dest]['arrival_time'] + "<br/>Fleet : " + driver;
+                    } else {
+                        description = "Delivery Sequence# : " + dest + "<br/>Address : " + routingOutput['solution'][driver][dest]['location_name'] + "<br/>Arrival Time : " + routingOutput['solution'][driver][dest]['arrival_time'] + "<br/>Finish Time : " + routingOutput['solution'][driver][dest]['finish_time'] + "<br/>Fleet : " + driver;
+                    }
+                    var aFeature = {
+                        "type": "Feature",
+                        "geometry": {
+                            "type": "Point",
+                            "coordinates": routingOutput['solution'][driver][dest]['geocode']
+                        },
+                        "properties": {
+                            "description" : description,
+                            "title": dest,
+                            "icon": "star"
+                        }
+                    };
+                    features.push(aFeature);
+                    coordinates.push(routingOutput['solution'][driver][dest]['geocode']);
                 }
             }
-        });
-        map.addSource(driver + "points", {
-            "type": "geojson",
-            "data": {
-                "type": "FeatureCollection",
-                "features": features
+            // add source for each driver
+            if (map.getSource(driver)) {
+                map.removeSource(driver);
             }
-        });
-
-        map.addLayer({
-            "id": driver,
-            "type": "line",
-            "source": driver,
-            "layout": {
-                'visibility': 'none',
-                "line-join": "bevel",
-                "line-cap": "round"
-            },
-            "paint": {
-                "line-color": colors[idx],
-                "line-width": 2
+            map.addSource(driver, {
+                "type": "geojson",
+                "data": {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "LineString",
+                        "coordinates": coordinates
+                    }
+                }
+            });
+            if (map.getSource(driver + "points")) {
+                map.removeSource(driver + "points");
             }
-        });
-
-        map.addLayer({
-            "id": driver + "points",
-            "type": "symbol",
-            "source": driver + "points",
-            "layout": {
-                'visibility': 'none',
-                "icon-image": "{icon}-15",
-                "icon-allow-overlap": true,
-                "text-field": "{title}",
-                "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-                "text-offset": [0, 0.6],
-                "text-anchor": "top"
+            map.addSource(driver + "points", {
+                "type": "geojson",
+                "data": {
+                    "type": "FeatureCollection",
+                    "features": features
+                }
+            });
+            if (map.getLayer(driver)) {
+                map.removeLayer(driver);
             }
-        });
-        idx += 1;
-    }
-
-    // Populate the menu to enable/disable the layers
-    for (var i = 1; i <= routeLayerIds.length; i++) {
-        var link = document.createElement('a');
-        link.href = 'Driver_' + i;
-        link.className = '';
-        link.textContent = "Driver " + i;
-
-        link.onclick = function (e) {
-            var clickedLayer = this.getAttribute("href");
-            e.preventDefault();
-            e.stopPropagation();
-
-            var visibility = map.getLayoutProperty(clickedLayer, 'visibility');
-
-            if (visibility === 'visible') {
-                map.setLayoutProperty(clickedLayer, 'visibility', 'none');
-                map.setLayoutProperty(clickedLayer + "points", 'visibility', 'none');
-                this.className = '';
-            } else {
-                this.className = 'active';
-                map.setLayoutProperty(clickedLayer, 'visibility', 'visible');
-                map.setLayoutProperty(clickedLayer + "points", 'visibility', 'visible');
+            map.addLayer({
+                "id": driver,
+                "type": "line",
+                "source": driver,
+                "layout": {
+                    'visibility': 'none',
+                    "line-join": "bevel",
+                    "line-cap": "round"
+                },
+                "paint": {
+                    "line-color": colors[idx],
+                    "line-width": 2
+                }
+            });
+            if (map.getLayer(driver + "points")) {
+                map.removeLayer(driver + "points");
             }
-        };
+            map.addLayer({
+                "id": driver + "points",
+                "type": "symbol",
+                "source": driver + "points",
+                "layout": {
+                    'visibility': 'none',
+                    "icon-image": "{icon}-15",
+                    "icon-allow-overlap": true,
+                    "text-field": "{title}",
+                    "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+                    "text-offset": [0, 0.6],
+                    "text-anchor": "top"
+                }
+            });
+            idx += 1;
+        }
 
+        // clear the existing menu
         var layers = document.getElementById('menu');
-        layers.appendChild(link);
-    }
-});
+        while (layers.firstChild) {
+            layers.removeChild(layers.firstChild);
+        }
+        // Populate the menu to enable/disable the layers
+        for (var i = 1; i <= routeLayerIds.length; i++) {
+            var link = document.createElement('a');
+            link.href = 'Driver_' + i;
+            link.className = '';
+            link.textContent = "Driver " + i;
 
-// Show information when mouse hovers to certains delivery point
-var popup = new mapboxgl.Popup({
-    closeButton: false,
-    closeOnClick: false
-});
+            link.onclick = function (e) {
+                var clickedLayer = this.getAttribute("href");
+                e.preventDefault();
+                e.stopPropagation();
 
-// Use the same approach as above to indicate that the symbols are clickable
-// by changing the cursor style to 'pointer'.
-map.on('mousemove', function (e) {
-    var features = map.queryRenderedFeatures(e.point, { layers: pointLayerIds });
-    // Change the cursor style as a UI indicator.
-    map.getCanvas().style.cursor = (features.length) ? 'pointer' : '';
+                var visibility = map.getLayoutProperty(clickedLayer, 'visibility');
 
-    if (!features.length) {
-        popup.remove();
-        return;
-    }
+                if (visibility === 'visible') {
+                    map.setLayoutProperty(clickedLayer, 'visibility', 'none');
+                    map.setLayoutProperty(clickedLayer + "points", 'visibility', 'none');
+                    this.className = '';
+                } else {
+                    this.className = 'active';
+                    map.setLayoutProperty(clickedLayer, 'visibility', 'visible');
+                    map.setLayoutProperty(clickedLayer + "points", 'visibility', 'visible');
+                }
+            };
 
-    var feature = features[0];
+            var layers = document.getElementById('menu');
+            layers.appendChild(link);
+        }
+        // Show information when mouse hovers to certains delivery point
+        var popup = new mapboxgl.Popup({
+            closeButton: false,
+            closeOnClick: false
+        });
+        // Use the same approach as above to indicate that the symbols are clickable
+        // by changing the cursor style to 'pointer'.
+        map.on('mousemove', function (e) {
+            var features = map.queryRenderedFeatures(e.point, { layers: pointLayerIds });
+            // Change the cursor style as a UI indicator.
+            map.getCanvas().style.cursor = (features.length) ? 'pointer' : '';
 
-    // Populate the popup and set its coordinates
-    // based on the feature found.
-    popup.setLngLat(feature.geometry.coordinates)
-        .setHTML(feature.properties.description)
-        .addTo(map);
-});
+            if (!features.length) {
+                popup.remove();
+                return;
+            }
+
+            var feature = features[0];
+
+            // Populate the popup and set its coordinates
+            // based on the feature found.
+            popup.setLngLat(feature.geometry.coordinates).setHTML(feature.properties.description).addTo(map);
+        });
+    };
 
 </script>
 

@@ -7,8 +7,8 @@
       <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
       <script type="text/javascript">
         // Builds the HTML Table out of output.
-        function buildHtmlTable(inputSelector, outputSelector) {
-          // Build the input data
+        function buildHtmlTable() {
+          // Build the delivery point
           var inputData = #jsonInput#;
           var visits = inputData['data']['visits'];
           var tableInput$ = $('<table/>');
@@ -32,7 +32,32 @@
             row$.append($('<td/>').html(visits[destId]['load']));
             tableInput$.append(row$);
           }
-          $(inputSelector).append(tableInput$);
+          $('#deliveryPoint').append(tableInput$);
+
+          // Build the fleet
+          var fleet = inputData['data']['fleet'];
+          var tableInput$ = $('<table/>');
+          tableInput$.attr('class', 'table table-striped');
+          var headerTr$ = $('<tr/>');
+          headerTr$.append($('<th/>').html("Driver"));
+          headerTr$.append($('<th/>').html("Start and End Location ID"));
+          headerTr$.append($('<th/>').html("Start and End Location Address"));
+          headerTr$.append($('<th/>').html("Shift Start"));
+          headerTr$.append($('<th/>').html("Shift End"));
+          headerTr$.append($('<th/>').html("Capacity"));
+          tableInput$.append($('<thead/>').append(headerTr$));
+          tableInput$.append($('<tbody/>'));
+          for (driver in fleet) {
+            var row$ = $('<tr/>');
+            row$.append($('<td/>').html(driver));
+            row$.append($('<td/>').html(fleet[driver]['start_location']['id']));
+            row$.append($('<td/>').html(fleet[driver]['start_location']['name']));
+            row$.append($('<td/>').html(fleet[driver]['shift_start']));
+            row$.append($('<td/>').html(fleet[driver]['shift_end']));
+            row$.append($('<td/>').html(fleet[driver]['capacity']));
+            tableInput$.append(row$);
+          }
+          $('#fleet').append(tableInput$);
 
           // Build the output result
           var totalDelivery = 0;
@@ -78,7 +103,6 @@
               // iterate through all the delivery points
               //if (output[keys[k]].length > 2) {
                 for (i=1; i < output[keys[k]].length; i++) {
-                  console.log(output[keys[k]][i]['location_id']);
                   delivery = visits[output[keys[k]][i]['location_id']];
                   if (output[keys[k]][i]['location_id'] == 'depot') {
                     delivery = visits[Object.keys(visits)[0]];
@@ -97,16 +121,19 @@
                 totalDelivery += (output[keys[k]].length - 2);
               //}
           }
-          $(outputSelector).append(table$);
+          $('#output').append(table$);
         }
 
       </script>
   </head>
-  <body onLoad="buildHtmlTable('#input', '#output')">
+  <body onLoad="buildHtmlTable()">
       <!-- Nav tabs -->
       <ul class="nav nav-tabs" role="tablist">
         <li class="nav-item">
-          <a class="nav-link active" data-toggle="tab" href="#input" role="tab">Input Data</a>
+          <a class="nav-link active" data-toggle="tab" href="#deliveryPoint" role="tab">Delivery Points</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link active" data-toggle="tab" href="#fleet" role="tab">Fleet</a>
         </li>
         <li class="nav-item">
           <a class="nav-link" data-toggle="tab" href="#output" role="tab">Optimization Result</a>
@@ -115,7 +142,8 @@
 
       <!-- Tab panes -->
       <div class="tab-content">
-        <div class="tab-pane active" id="input" role="tabpanel"></div>
+        <div class="tab-pane active" id="deliveryPoint" role="tabpanel"></div>
+        <div class="tab-pane active" id="fleet" role="tabpanel"></div>
         <div class="tab-pane" id="output" role="tabpanel"></div>
       </div>
   </body>

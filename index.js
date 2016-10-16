@@ -30,7 +30,6 @@ var token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJfaWQiOiI1NDFiNzU2MWZkMmJlMz
 var client = new Routific.Client({token: token});
 var defaultVrp = new Routific.Vrp();
 
-var depot = null;
 var problem = {};
 problem.visits = [];
 problem.fleet = [];
@@ -53,34 +52,21 @@ function lookupAddress(latitude, longtitude) {
     return res['results'][0]['formatted_address'];
 }
 
+function shiftTime(timeStr, change) {
+    var times = timeStr.split(":");
+    var d = new Date();
+    d.setHours(parseInt(times[0]));
+    d.setMinutes(parseInt(times[1]));
+    d.setTime(d.getTime() + (parseInt(change)*60*1000)); 
+    return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
+}
+
 function findBestRoute(vrp, outputMessage, response) {
         // console.log(JSON.stringify(vrp, null, 2));
     // write the input for the routing
     jsonfile.writeFile("routingInput.json", JSON.stringify(vrp, null, 2));
 
     console.log("Requesting the optimized route .....");
-    /*
-    var xmlHttp = new XMLHttpRequest();
-    xmlHttp.open( "POST", "https://api.routific.com/v1/vrp", false ); // false for synchronous request
-    xmlHttp.setRequestHeader("Content-Type", "application/json");
-    xmlHttp.setRequestHeader("Authorization", "bearer " + token);
-    xmlHttp.send( JSON.stringify(vrp, null, 2) );
-    console.log("Status = " + xmlHttp.status);
-    console.log("Response = " + xmlHttp.responseText);
-    var solution = xmlHttp.responseText;
-    for (driver in solution['solution']) {
-        for (i in solution['solution'][driver]) {
-            solution['solution'][driver][i]['geocode'] = [
-                locationMapping[solution['solution'][driver][i]['location_id']]['long'],
-                locationMapping[solution['solution'][driver][i]['location_id']]['lat']
-            ];
-        }
-    }
-    // write the solution from Routific
-    jsonfile.writeFile("routingOutput.json", JSON.stringify(solution, null, 2));
-    console.log("Optimization result = " + solution['status']);
-    console.log("Total travel time = " + solution['total_travel_time']);
-    */
 
     // Process the route
     client.route(vrp, function(error, solution) {
@@ -103,11 +89,22 @@ function findBestRoute(vrp, outputMessage, response) {
         }
         // check if we need to send the result to the response
         if (response) {
-            response.render('mapbox', { routingOutput: JSON.stringify(solution, null, 2), outputDetail: outputMessage});
+            response.writeHead(200, { 'Content-Type': 'application/json' }); 
+            var result = { routingOutput: solution, outputDetail: outputMessage };
+            response.end(JSON.stringify(result));
         }
     });
 }
 
+var depot = null;
+/*
+depot = {};
+depot['id'] = "depot";
+depot['lat'] = 1.3669487;
+depot['lng'] = 103.9076453;
+depot['name'] = lookupAddress(depot['lat'], depot['lng']);
+locationMapping['depot'] = { "lat" : depot['lat'], "long" : depot['lng']};
+*/
 
 //record_parsed will be emitted each csv row being processed
 converterVehicle.on("record_parsed", function (jsonObj) {
@@ -165,18 +162,30 @@ converterFleet.on("end_parsed", function (jsonArray) {
         var outputMessage = "Route is generated based on default order time and traffic is slow with <a href='/defaultoutput' target='_blank'>output result</a>";
         res.render('mapbox', { routingOutput: JSON.stringify(defaultSolution, null, 2), outputDetail: outputMessage});
     });
-    app.post('/', function (req, res) {
+    app.post('/findroute', function (req, res) {
         var vrp = new Routific.Vrp();
         vrp.data = JSON.parse(JSON.stringify(defaultVrp.data));
-        var outputMessage = "Route is generated based on " + req.body.orderTime + " minute(s) order time and traffic is " + req.body.traffic + " with <a href='/output' target='_blank'>output result</a>";
+        var outputMessage = "Route is generated. Input and output data can be found <a href='/output' target='_blank'>here</a>";
         if (req.body.orderTime) {
-            console.log("message = " + outputMessage);
+            console.log("Update order time to be " + req.body.orderTime);
             // update the order time based on input
             for (order in vrp.data.visits) {
                 vrp.data.visits[order]['duration'] = req.body.orderTime;
             }
-        } else {
-            outputMessage = "Route is generated based on default order time and traffic is " + req.body.traffic + " with <a href='/output' target='_blank'>output result</a>";
+        }
+        if (req.body.shiftStart) {
+            console.log("Change shift start by " + req.body.shiftStart);
+            // update the shift start time based on input
+            for (driver in vrp.data.fleet) {
+                vrp.data.fleet[driver]['shift_start'] = shiftTime(vrp.data.fleet[driver]['shift_start'], req.body.shiftStart);
+            }
+        }
+        if (req.body.shiftEnd) {
+            console.log("Change shift end by " + req.body.shiftEnd);
+            // update the shift end time based on input
+            for (driver in vrp.data.fleet) {
+                vrp.data.fleet[driver]['shift_end'] = shiftTime(vrp.data.fleet[driver]['shift_end'], req.body.shiftEnd);
+            }
         }
         vrp.addOption("traffic", req.body.traffic);    
         findBestRoute(vrp, outputMessage, res);
