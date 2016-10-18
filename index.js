@@ -97,14 +97,12 @@ function findBestRoute(vrp, outputMessage, response) {
 }
 
 var depot = null;
-/*
 depot = {};
 depot['id'] = "depot";
 depot['lat'] = 1.3669487;
 depot['lng'] = 103.9076453;
 depot['name'] = lookupAddress(depot['lat'], depot['lng']);
 locationMapping['depot'] = { "lat" : depot['lat'], "long" : depot['lng']};
-*/
 
 //record_parsed will be emitted each csv row being processed
 converterVehicle.on("record_parsed", function (jsonObj) {

@@ -80,42 +80,45 @@
           var keys = Object.keys(output);
           for (var k = keys.length-1; k >= 0; k--) {
               var delivery = visits[output[keys[k]][0]['location_id']];
-              if (output[keys[k]][0]['location_id'] == 'depot') {
-                delivery = visits[Object.keys(visits)[0]];
-              }
+              // delivery = visits[Object.keys(visits)[0]];
+
               var row$ = $('<tr/>');
               var col$ = $('<td/>');
-              // only print one row as 
-              //if (output[keys[k]].length > 2) {
-                col$.attr('rowspan', output[keys[k]].length);
-              //}
+              col$.attr('rowspan', output[keys[k]].length);
+
               row$.append(col$.html(keys[k]));
               row$.append($('<td/>').html(output[keys[k]][0]['location_id']));
-              row$.append($('<td/>').html(delivery['location']['name']));
+              row$.append($('<td/>').html(output[keys[k]][0]['location_name']));
               row$.append($('<td/>').html(output[keys[k]][0]['arrival_time']));
               row$.append($('<td/>').html(output[keys[k]][0]['finish_time']));
-              row$.append($('<td/>').html(delivery['start']));
-              row$.append($('<td/>').html(delivery['end']));
-              row$.append($('<td/>').html(delivery['duration']));
-              row$.append($('<td/>').html(delivery['load']));
+              var col$ = $('<td/>');
+              col$.attr('colspan', 4);
+              row$.append(col$.html(''));
               // add the first row that has the Driver coloumn
               table$.append(row$);
               // iterate through all the delivery points
               //if (output[keys[k]].length > 2) {
                 for (i=1; i < output[keys[k]].length; i++) {
                   delivery = visits[output[keys[k]][i]['location_id']];
-                  if (output[keys[k]][i]['location_id'] == 'depot') {
-                    delivery = visits[Object.keys(visits)[0]];
-                  }
                   var row$ = $('<tr/>');
                   row$.append($('<td/>').html(output[keys[k]][i]['location_id']));
-                  row$.append($('<td/>').html(delivery['location']['name']));
+                  row$.append($('<td/>').html(output[keys[k]][i]['location_name']));
                   row$.append($('<td/>').html(output[keys[k]][i]['arrival_time']));
                   row$.append($('<td/>').html(output[keys[k]][i]['finish_time']));
-                  row$.append($('<td/>').html(delivery['start']));
-                  row$.append($('<td/>').html(delivery['end']));
-                  row$.append($('<td/>').html(delivery['duration']));
-                  row$.append($('<td/>').html(delivery['load']));
+                  if (output[keys[k]][i]['location_id'] == 'depot') {
+                    /*
+                    delivery = visits[Object.keys(visits)[0]];
+                    */
+                    row$.append($('<td/>').html(''));
+                    row$.append($('<td/>').html(''));
+                    row$.append($('<td/>').html(''));
+                    row$.append($('<td/>').html(''));
+                  } else {
+                    row$.append($('<td/>').html(delivery['start']));
+                    row$.append($('<td/>').html(delivery['end']));
+                    row$.append($('<td/>').html(delivery['duration']));
+                    row$.append($('<td/>').html(delivery['load']));
+                  }
                   table$.append(row$);
                 }
                 totalDelivery += (output[keys[k]].length - 2);
