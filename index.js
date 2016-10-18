@@ -90,7 +90,7 @@ function findBestRoute(vrp, outputMessage, response) {
         // check if we need to send the result to the response
         if (response) {
             response.writeHead(200, { 'Content-Type': 'application/json' }); 
-            var result = { routingOutput: solution, outputDetail: outputMessage };
+            var result = { routingOutput: solution, outputDetail: outputMessage + " Total travel time = " + solution['total_travel_time'] };
             response.end(JSON.stringify(result));
         }
     });
@@ -156,16 +156,16 @@ converterFleet.on("end_parsed", function (jsonArray) {
     console.log("Finish parsing data");
     // build default solution
     defaultVrp.addOption("traffic", "slow");
-    findBestRoute(defaultVrp, "Route is generated based on default order time and traffic is slow", null);
+    findBestRoute(defaultVrp, "Route is generated based on default order time and traffic is slow.", null);
     // define root handler
     app.get('/', function (req, res) {
-        var outputMessage = "Route is generated based on default order time and traffic is slow with <a href='/defaultoutput' target='_blank'>output result</a>";
+        var outputMessage = "Route is generated based on default order time and traffic is slow with <a href='/defaultoutput' target='_blank'>output result</a>.";
         res.render('mapbox', { routingOutput: JSON.stringify(defaultSolution, null, 2), outputDetail: outputMessage});
     });
     app.post('/findroute', function (req, res) {
         var vrp = new Routific.Vrp();
         vrp.data = JSON.parse(JSON.stringify(defaultVrp.data));
-        var outputMessage = "Route is generated. Input and output data can be found <a href='/output' target='_blank'>here</a>";
+        var outputMessage = "Route is generated. Input and output data can be found <a href='/output' target='_blank'>here</a>.";
         if (req.body.orderTime) {
             console.log("Update order time to be " + req.body.orderTime);
             // update the order time based on input
@@ -185,6 +185,13 @@ converterFleet.on("end_parsed", function (jsonArray) {
             // update the shift end time based on input
             for (driver in vrp.data.fleet) {
                 vrp.data.fleet[driver]['shift_end'] = shiftTime(vrp.data.fleet[driver]['shift_end'], req.body.shiftEnd);
+            }
+        }
+        if (!req.body.constraint) {
+            console.log("Disable constraint");
+            // disable the load
+            for (order in vrp.data.visits) {
+                delete vrp.data.visits[order]['load'];
             }
         }
         vrp.addOption("traffic", req.body.traffic);    
