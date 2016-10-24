@@ -217,8 +217,14 @@
                 <div class="col-sm-10">
                     <div class="form-check">
                       <label class="form-check-label">
-                        <input class="form-check-input" type="checkbox" value="constraint" checked>
+                        <input class="form-check-input" type="checkbox" name="constraint" value="true" checked>
                             Enable Capacity Constraint
+                      </label>
+                    </div>
+                    <div class="form-check">
+                      <label class="form-check-label">
+                        <input class="form-check-input" type="checkbox" name="customdepot" value="true">
+                            Set Depot to be 1 Greenwich Drive (DHL Advanced Regional Centre Singapore)
                       </label>
                     </div>
                 </div>

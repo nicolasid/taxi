@@ -97,13 +97,6 @@ function findBestRoute(vrp, outputMessage, response) {
 }
 
 var depot = null;
-depot = {};
-depot['id'] = "depot";
-depot['lat'] = 1.3669487;
-depot['lng'] = 103.9076453;
-depot['name'] = lookupAddress(depot['lat'], depot['lng']);
-locationMapping['depot'] = { "lat" : depot['lat'], "long" : depot['lng']};
-
 //record_parsed will be emitted each csv row being processed
 converterVehicle.on("record_parsed", function (jsonObj) {
     var order = {};
@@ -122,10 +115,12 @@ converterVehicle.on("record_parsed", function (jsonObj) {
         depot['lat'] = order['location']['lat'];
         depot['lng'] = order['location']['lng'];
         locationMapping['depot'] = { "lat" : jsonObj['Latitude'], "long" : jsonObj['Longtitude']};
-    };
-    // console.log("Add visit " + order['location']['name']);
-    defaultVrp.addVisit(new String(jsonObj['SG Postal Code']), order);
-    problem.visits.push(order);
+    } else {
+        // Add delivery point except the depot
+        // console.log("Add visit " + order['location']['name']);
+        defaultVrp.addVisit(new String(jsonObj['SG Postal Code']), order);
+        problem.visits.push(order);
+    }
     locationMapping[jsonObj['SG Postal Code']] = { "lat" : jsonObj['Latitude'], "long" : jsonObj['Longtitude']};
 });
 require("fs").createReadStream("./data/vrptw_8.csv").pipe(converterVehicle);
@@ -190,6 +185,19 @@ converterFleet.on("end_parsed", function (jsonArray) {
             // disable the load
             for (order in vrp.data.visits) {
                 delete vrp.data.visits[order]['load'];
+            }
+        }
+        if (req.body.customdepot) {
+            console.log("Use custom depot");
+            var aDepot = {};
+            aDepot['id'] = "depot";
+            aDepot['lat'] = 1.3669487;
+            aDepot['lng'] = 103.9076453;
+            aDepot['name'] = lookupAddress(aDepot['lat'], aDepot['lng']);
+            locationMapping['depot'] = { "lat" : aDepot['lat'], "long" : aDepot['lng']};
+            for (driver in vrp.data.fleet) {
+                vrp.data.fleet[driver]['start_location'] = aDepot;
+                vrp.data.fleet[driver]['end_location'] = aDepot;
             }
         }
         vrp.addOption("traffic", req.body.traffic);    
