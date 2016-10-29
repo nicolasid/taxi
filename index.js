@@ -212,3 +212,7 @@ app.get('/output', function (req, res) {
 app.get('/defaultoutput', function (req, res) {
     res.render('output', { "jsonOutput" : JSON.stringify(defaultSolution, null, 2), "jsonInput" : JSON.stringify(defaultVrp) });
 });
+
+app.get('/about', function (req, res) {
+    res.render('about');
+});

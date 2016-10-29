@@ -174,7 +174,7 @@
 <body>
     <div style="position:absolute; width:24%; left:1%;">
         <h3>Route Finder</h3>
-        <form id="routeParam" style="padding-top:2%;" method="post" autocomplete="off">
+        <form id="routeParam" method="post" autocomplete="off">
             <div class="form-group row">
                 <label class="col-sm-4 col-form-label">Delivery Time</label>
                 <div class="col-sm-5">
@@ -224,7 +224,7 @@
                     <div class="form-check">
                       <label class="form-check-label">
                         <input class="form-check-input" type="checkbox" name="customdepot" value="true">
-                            Set Depot to be 1 Greenwich Drive (DHL Advanced Regional Centre Singapore)
+                            Set Depot to be 1 Greenwich Drive (i.e. DHL Singapore)
                       </label>
                     </div>
                 </div>
@@ -238,6 +238,7 @@
                 <p style="padding-top:15px" class="col-sm-10 col-form-label" id="outputDetail">#outputDetail#</p>
             </div>
         </form>
+        <div>&copy; <a href='/about' target='_blank'>EB5206 Team 8</a></div>
     </div>
 
 <nav id="menu"></nav>

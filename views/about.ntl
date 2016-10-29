@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+  <head>
+      <title>About</title>
+      <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.0.0/jquery.min.js"></script>
+      <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  </head>
+  <body onLoad="buildHtmlTable()">
+      <div class="container">
+          <div class="jumbotron">
+            <h2 class="display-3">EB5206 Analytics On logistics Management Team 8</h2>
+            <table class="table">
+              <tr>
+                <td>Tan Kee-Cheong</td>
+                <td>A0135892W</td>
+              </tr>
+              <tr>
+                <td>Chen Xiaogang</td>
+                <td>A0135932E</td>
+              </tr>
+              <tr>
+                <td>Jiang Xiaoyi</td>
+                <td>A0135893U</td>
+              </tr>
+              <tr>
+                <td>Nicolas Andres</td>
+                <td>A0135922H</td>
+              </tr>
+              <tr>
+                <td>Wilson Tio</td>
+                <td>A0045566Y</td>
+              </tr>
+              <tr>
+                <td>Donn Lee</td>
+                <td>A0135896M</td>
+              </tr>
+            </table>
+            <div>For feedback and othe enquiries, please contact <a href="mailto:a0135922@u.nus.edu">admin</a>.</div>
+          </div>
+      </div>
+  </body>
+</html>
