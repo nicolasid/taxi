@@ -1,6 +1,8 @@
 var jsonfile = require('jsonfile')
 var express = require('express');
 var bodyParser = require('body-parser');
+var csvParser = require('csv-parse');
+var fs = require('fs');
 var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 var app = express();
 
@@ -24,25 +26,6 @@ app.engine('ntl', function (filePath, options, callback) { // define the templat
 app.set('views', './views'); // specify the views directory
 app.set('view engine', 'ntl'); // register the template engine
 
-var Routific = require("routific");
-var token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJfaWQiOiI1NDFiNzU2MWZkMmJlMzA4MDAyY2VlYmIiLCJpYXQiOjE0MTEwODU2NjV9.5jb_61ykdHA2RyhfVWFMowb2oSB9gWAY4mPKHk1iCiI";
-
-var client = new Routific.Client({token: token});
-var defaultVrp = new Routific.Vrp();
-
-var problem = {};
-problem.visits = [];
-problem.fleet = [];
-
-//Converter Class 
-var Converter = require("csvtojson").Converter;
-var converterVehicle = new Converter({});
-
-// Mapping of location id to the latitude and longtitude
-var locationMapping = {};
-
-var defaultSolution = null;
-
 function lookupAddress(latitude, longtitude) {
     var xmlHttp = new XMLHttpRequest();
     var urlRequest = "https://maps.googleapis.com/maps/api/geocode/json?key=AIzaSyDynHMnqFWU0O1dOK4UxMq1ChABmlh4Kfs&latlng=" + latitude + "," + longtitude;
@@ -52,167 +35,50 @@ function lookupAddress(latitude, longtitude) {
     return res['results'][0]['formatted_address'];
 }
 
-function shiftTime(timeStr, change) {
-    var times = timeStr.split(":");
-    var d = new Date();
-    d.setHours(parseInt(times[0]));
-    d.setMinutes(parseInt(times[1]));
-    d.setTime(d.getTime() + (parseInt(change)*60*1000)); 
-    return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
-}
+// define root handler
+app.get('/', function (req, res) {
+    console.log("New request received on root path ...");
+    res.render('mapbox');
+});
 
-function findBestRoute(vrp, outputMessage, response) {
-        // console.log(JSON.stringify(vrp, null, 2));
-    // write the input for the routing
-    jsonfile.writeFile("routingInput.json", JSON.stringify(vrp, null, 2));
-
-    console.log("Requesting the optimized route .....");
-
-    // Process the route
-    client.route(vrp, function(error, solution) {
-        if (error) throw error
-        for (driver in solution['solution']) {
-            for (i in solution['solution'][driver]) {
-                solution['solution'][driver][i]['geocode'] = [
-                    locationMapping[solution['solution'][driver][i]['location_id']]['long'],
-                    locationMapping[solution['solution'][driver][i]['location_id']]['lat']
-                ];
-            }
-        }
-        // write the solution from Routific
-        jsonfile.writeFile("routingOutput.json", JSON.stringify(solution, null, 2));
-        console.log("Optimization result = " + solution['status']);
-        console.log("Total travel time = " + solution['total_travel_time']);
-        // assign the first solution found as default solution
-        if (defaultSolution == null) {
-            defaultSolution = solution;
-        }
-        // check if we need to send the result to the response
-        if (response) {
-            response.writeHead(200, { 'Content-Type': 'application/json' }); 
-            var result = { routingOutput: solution, outputDetail: outputMessage + " Total travel time = " + solution['total_travel_time'] };
-            response.end(JSON.stringify(result));
-        }
+function parseCSV(csvFile) {
+    var csvData = [];
+    csvParser(rawCsv, {delimiter: ','}
+    ).on('data', function(csvrow) {
+        csvData.push(csvrow);
+    }).on('end',function() {
+        return csvData;
     });
 }
 
-var depot = null;
-//record_parsed will be emitted each csv row being processed
-converterVehicle.on("record_parsed", function (jsonObj) {
-    var order = {};
-    order['location'] = {};
-    order['location']['name'] = lookupAddress(jsonObj['Latitude'], jsonObj['Longtitude']);
-    order['location']['lat'] = jsonObj['Latitude'];
-    order['location']['lng'] = jsonObj['Longtitude'];
-    order['load'] = jsonObj['Load'];
-    if (jsonObj['Earliest']) order['start'] = jsonObj['Earliest'];
-    if (jsonObj['Latest']) order['end'] = jsonObj['Latest'];
-    order['duration'] = jsonObj['Duration'];
-    if (depot == null) {
-        depot = {};
-        depot['id'] = "depot";
-        depot['name'] = order['location']['name'];
-        depot['lat'] = order['location']['lat'];
-        depot['lng'] = order['location']['lng'];
-        locationMapping['depot'] = { "lat" : jsonObj['Latitude'], "long" : jsonObj['Longtitude']};
-    } else {
-        // Add delivery point except the depot
-        // console.log("Add visit " + order['location']['name']);
-        defaultVrp.addVisit(new String(jsonObj['SG Postal Code']), order);
-        problem.visits.push(order);
-    }
-    locationMapping[jsonObj['SG Postal Code']] = { "lat" : jsonObj['Latitude'], "long" : jsonObj['Longtitude']};
-});
-require("fs").createReadStream("./data/vrptw_8.csv").pipe(converterVehicle);
-
-var converterFleet = new Converter({});
-//record_parsed will be emitted each csv row being processed 
-converterFleet.on("record_parsed", function (js) {
-    var vehicle = {};
-    vehicle['start_location'] = depot;
-    vehicle['end_location'] = depot;
-    vehicle['shift_start'] = js['Shift start'];
-    vehicle['shift_end'] = js['Shift end'];
-    vehicle['capacity'] = js['Capacity'];
-    problem.fleet.push(vehicle);
-    defaultVrp.addVehicle(js['Vehicle'], vehicle);
-    // console.log("Add vehicle " + vehicle.start_location);
+app.get('/getTaxiData', function (req, res) {
+    var csvData = [];
+    fs.createReadStream('/Users/nicolas/study/H1_2017/Big Data/CA/taxi_coordinates.csv')
+        .pipe(csvParser({delimiter: ','}))
+        .on('data', function (row) {
+            console.log('Row: %s', row[0]);
+            csvData.push(row[0]);})
+        .on('end', function() {
+            res.writeHead(200, { 'Content-Type': 'text/plain' }); 
+            res.end(csvData.toString());
+        });
 });
 
-// when parsing the vehicle finished then start the fleet data parsing
-converterVehicle.on("end_parsed", function (jsonArray) {
-    require("fs").createReadStream("./data/Fleet.csv").pipe(converterFleet);
+/*
+app.get('/getTaxiData', function (req, res) {
+    console.log("New request received on /getTaxiData with parameter = " + req.query.timestamp);
+    jsonfile.readFile("/Users/nicolas/study/H1_2017/Big Data/CA/taxi/" + req.query.timestamp + ".json", function(err, obj) {
+        res.writeHead(200, { 'Content-Type': 'application/json' }); 
+        res.end(JSON.stringify(obj));
+        console.error(err);
+    })
 });
+*/
 
-// when fleet data parsing finished then call the Routific API
-converterFleet.on("end_parsed", function (jsonArray) {
-    console.log("Finish parsing data");
-    // build default solution
-    defaultVrp.addOption("traffic", "slow");
-    findBestRoute(defaultVrp, "Route is generated based on default order time and traffic is slow.", null);
-    // define root handler
-    app.get('/', function (req, res) {
-        var outputMessage = "Route is generated based on default order time and traffic is slow with <a href='/defaultoutput' target='_blank'>output result</a>.";
-        res.render('mapbox', { routingOutput: JSON.stringify(defaultSolution, null, 2), outputDetail: outputMessage});
-    });
-    app.post('/findroute', function (req, res) {
-        var vrp = new Routific.Vrp();
-        vrp.data = JSON.parse(JSON.stringify(defaultVrp.data));
-        var outputMessage = "Route is generated. Input and output data can be found <a href='/output' target='_blank'>here</a>.";
-        if (req.body.orderTime) {
-            console.log("Update order time to be " + req.body.orderTime);
-            // update the order time based on input
-            for (order in vrp.data.visits) {
-                vrp.data.visits[order]['duration'] = req.body.orderTime;
-            }
-        }
-        if (req.body.shiftStart) {
-            console.log("Change shift start by " + req.body.shiftStart);
-            // update the shift start time based on input
-            for (driver in vrp.data.fleet) {
-                vrp.data.fleet[driver]['shift_start'] = shiftTime(vrp.data.fleet[driver]['shift_start'], req.body.shiftStart);
-            }
-        }
-        if (req.body.shiftEnd) {
-            console.log("Change shift end by " + req.body.shiftEnd);
-            // update the shift end time based on input
-            for (driver in vrp.data.fleet) {
-                vrp.data.fleet[driver]['shift_end'] = shiftTime(vrp.data.fleet[driver]['shift_end'], req.body.shiftEnd);
-            }
-        }
-        if (!req.body.constraint) {
-            console.log("Disable constraint");
-            // disable the load
-            for (order in vrp.data.visits) {
-                delete vrp.data.visits[order]['load'];
-            }
-        }
-        if (req.body.customdepot) {
-            console.log("Use custom depot");
-            var aDepot = {};
-            aDepot['id'] = "depot";
-            aDepot['lat'] = 1.3669487;
-            aDepot['lng'] = 103.9076453;
-            aDepot['name'] = lookupAddress(aDepot['lat'], aDepot['lng']);
-            locationMapping['depot'] = { "lat" : aDepot['lat'], "long" : aDepot['lng']};
-            for (driver in vrp.data.fleet) {
-                vrp.data.fleet[driver]['start_location'] = aDepot;
-                vrp.data.fleet[driver]['end_location'] = aDepot;
-            }
-        }
-        vrp.addOption("traffic", req.body.traffic);    
-        findBestRoute(vrp, outputMessage, res);
-    });
-});
-
-app.get('/output', function (req, res) {
-    res.render('output', { "jsonOutput" : jsonfile.readFileSync("routingOutput.json"), "jsonInput" : jsonfile.readFileSync("routingInput.json") });
-});
-
-app.get('/defaultoutput', function (req, res) {
-    res.render('output', { "jsonOutput" : JSON.stringify(defaultSolution, null, 2), "jsonInput" : JSON.stringify(defaultVrp) });
-});
+// host static files
+app.use('/static', express.static('public'));
 
 app.get('/about', function (req, res) {
+    console.log("New request received on /about");
     res.render('about');
 });

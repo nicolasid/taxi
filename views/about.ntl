@@ -9,19 +9,15 @@
   <body onLoad="buildHtmlTable()">
       <div class="container">
           <div class="jumbotron">
-            <h2 class="display-3">EB5206 Analytics On logistics Management Team 8</h2>
+            <h2 class="display-3">EB5301 Big Data Engineering Team 16</h2>
             <table class="table">
               <tr>
                 <td>Tan Kee-Cheong</td>
                 <td>A0135892W</td>
               </tr>
               <tr>
-                <td>Chen Xiaogang</td>
-                <td>A0135932E</td>
-              </tr>
-              <tr>
-                <td>Jiang Xiaoyi</td>
-                <td>A0135893U</td>
+                <td>Liang Xiaohe</td>
+                <td>A0045427H</td>
               </tr>
               <tr>
                 <td>Nicolas Andres</td>
@@ -31,12 +27,8 @@
                 <td>Wilson Tio</td>
                 <td>A0045566Y</td>
               </tr>
-              <tr>
-                <td>Donn Lee</td>
-                <td>A0135896M</td>
-              </tr>
             </table>
-            <div>For feedback and othe enquiries, please contact <a href="mailto:a0135922@u.nus.edu">admin</a>.</div>
+            <div>For feedback and othe enquiries, please contact <a href="mailto:nicolas@u.nus.edu">admin</a>.</div>
           </div>
       </div>
   </body>
