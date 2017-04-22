@@ -23,7 +23,7 @@ api_token ='q9uIgGTCfDJrlwHzaJkEPRGrKY1Y4q5i'
 taxi_url = 'https://api.data.gov.sg/v1/transport/taxi-availability'
 
 # starting time for collection
-start_time = datetime(2017, 3, 10, 4, 50, 0)
+start_time = datetime(2017, 2, 21, 4, 50, 0)
 # ending time for collection
 end_time = datetime(2017, 3, 15, 23, 59, 0)
 
@@ -165,7 +165,8 @@ def extractFlightStatus(f_status):
     return [f_status['carrierFsCode'], f_status['flightNumber'], f_status['departureAirportFsCode'],
             departure_time, arrival_time, duration, arrival_terminal, airplane]
 
-## Read all json flight data
+
+## Read all json flight data and consolidate it in one csv file for initial analysis
 from os import listdir
 with open('/home/training/project/flight.csv', 'w') as flightCountFile:
     writer = csv.writer(flightCountFile, delimiter=',')
