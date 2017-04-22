@@ -1,7 +1,3 @@
-/**
-  * Node JS main script that shows taxi surcharge
-  */
-
 var jsonfile = require('jsonfile')
 var express = require('express');
 var bodyParser = require('body-parser');
@@ -55,36 +51,29 @@ function parseCSV(csvFile) {
     });
 }
 
-// Load flight data 
-var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
-var xmlHttp = new XMLHttpRequest();
-var urlRequest = "http://localhost:50075/webhdfs/v1/project/surcharge/flight.csv?op=OPEN&namenoderpcaddress=localhost:8020&offset=0";
-xmlHttp.open("GET", urlRequest, false);
-xmlHttp.send(null);
-var surchargeData = [];
-csvParser(xmlHttp.responseText, {delimiter: ','}
-    ).on('data', function(csvrow) {
-        // load surcharge data
-        surchargeData.push(csvrow);
-    }).on('end',function() {
-      console.log("finished load surcharge data");
-    });
-
-app.get('/getSurchargeData', function (req, res) {
-    console.log("Request counter " + req.query.c);
-    console.log("Response = " + surchargeData[req.query.c])
-    res.writeHead(200, { 'Content-Type': 'text/plain' }); 
-    res.end(surchargeData[req.query.c].toString());
-});
-
-
 app.get('/getTaxiData', function (req, res) {
-    var urlRequest = "http://localhost:50075/webhdfs/v1/project/surcharge/taxi1.json?op=OPEN&namenoderpcaddress=localhost:8020&offset=0";
-    xmlHttp.open("GET", urlRequest, false);
-    xmlHttp.send(null);
-    res.writeHead(200, { 'Content-Type': 'text/plain' }); 
-    res.end(xmlHttp.responseText);
+    var csvData = [];
+    fs.createReadStream('/Users/nicolas/study/H1_2017/Big Data/CA/taxi_coordinates.csv')
+        .pipe(csvParser({delimiter: ','}))
+        .on('data', function (row) {
+            console.log('Row: %s', row[0]);
+            csvData.push(row[0]);})
+        .on('end', function() {
+            res.writeHead(200, { 'Content-Type': 'text/plain' }); 
+            res.end(csvData.toString());
+        });
 });
+
+/*
+app.get('/getTaxiData', function (req, res) {
+    console.log("New request received on /getTaxiData with parameter = " + req.query.timestamp);
+    jsonfile.readFile("/Users/nicolas/study/H1_2017/Big Data/CA/taxi/" + req.query.timestamp + ".json", function(err, obj) {
+        res.writeHead(200, { 'Content-Type': 'application/json' }); 
+        res.end(JSON.stringify(obj));
+        console.error(err);
+    })
+});
+*/
 
 // host static files
 app.use('/static', express.static('public'));

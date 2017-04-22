@@ -13,9 +13,10 @@ from datetime import timedelta
 
 
 
+
 ## ============================================================
 # Collecting taxi availability data
-
+## ============================================================
 # data.gov.sg API token
 api_token ='q9uIgGTCfDJrlwHzaJkEPRGrKY1Y4q5i'
 # base URL for taxi availability API
@@ -49,9 +50,13 @@ with open('/home/training/project/taxi/taxi_count.csv', 'w') as taxiCountFile:
         query_time = query_time + timedelta(minutes = 1)
 
 
-## ============================================================
-# Collecting weather information
 
+
+
+
+## ============================================================
+# Collecting rainfall information
+## ============================================================
 # data.gov.sg API token
 api_token ='q9uIgGTCfDJrlwHzaJkEPRGrKY1Y4q5i'
 # base URL for taxi availability API
@@ -79,9 +84,13 @@ while (query_time <= end_time):
     query_time = query_time + timedelta(minutes = 5)
 
 
-## ============================================================ 
 
+
+
+
+## ============================================================ 
 # Collecting flight data
+## ============================================================
 app_key = 'a8ffcecb24b9986b71f57751c1621cc7'
 app_id = 'a1cd95ee'
 # starting time for flight collection
@@ -171,3 +180,6 @@ with open('/home/training/project/flight.csv', 'w') as flightCountFile:
                 # only extract flight that had landed
                 if f_status['status'] == 'L':
                     writer.writerow(extractFlightStatus(f_status))
+
+
+

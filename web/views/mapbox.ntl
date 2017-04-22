@@ -13,28 +13,41 @@
     <style>
         body { margin:0; padding:0; }
         #map { 
-          position:absolute; left:25%; width:75%; height: 100%;
+          position:absolute; left:30%; width:70%; height: 100%;
         }
     </style>
 </head>
 <body>
-    <div style="position:absolute; width:24%; left:1%; top:0%">
+    <div style="position:absolute; width:30%; left:1%; top:0%">
         <div><h3>Dynamic Taxi Surcharge</h3></div>
         <form id="routeParam" method="post" autocomplete="off" class="form-group row">
             <div>
                 <label class="col-lg-5 col-form-label">Available Taxi</label>
-                <label class="col-lg-7 col-form-label">1234</label>
+                <label id="taxiAvailable" class="col-lg-7 col-form-label">0</label>
             </div>
-            <div class="col-lg-4 col-form-label">
-                <label>Weather</label>
+            <div>
+                <label class="col-lg-5 col-form-label">Passenger Arrived</label>
+                <label id="passengerArrived" class="col-lg-7 col-form-label">0</label>
             </div>
-            <div class="col-lg-4" style="top:5px;"><img style="width:120px; height:110px;" id="weather" src="/static/sunny.png"/></div>
+            <div>
+                <label class="col-lg-5 col-form-label">Nb Flight Arrived</label>
+                <label id="flightArrived" class="col-lg-7 col-form-label">0</label>
+            </div>
+            <div>
+                <label class="col-lg-5 col-form-label">Flight Codes</label>
+                <label id="flightCodes" class="col-lg-7 col-form-label">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
+            </div>
+            <div class="col-lg-5 col-form-label">
+                <label>Weather Effect</label>
+            </div>
+            <div class="col-lg-7" style="top:5px;" id="weather">
+            </div>
         </form>
     </div>
     <div style="position:absolute; width:24%; left:1%; top:35%" class="row show-grid">
         <div>
-            <label class="col-lg-5 col-label">Proposed Taxi Surcharge</label>
-            <h4><label id="surcharge" class="col-lg-7 col-form-label">$1</label></h4>
+            <label class="col-lg-6 col-label">Taxi Surcharge</label>
+            <h3><label class="col-lg-6 col-form-label">$<span id="surcharge">0</span></label></h3>
         </div>
         <div class="col-lg-8" style="top:10px;">
             <button id="toggle" type="button" class="btn btn-primary" data-toggle="button" aria-pressed="false">
@@ -97,12 +110,12 @@
                 style: 'mapbox://styles/mapbox/streets-v9',
                 // the center is changi airport
                 center: [103.987222,1.354193],
-                zoom: 12.6
+                zoom: 13.2
             });
             return aMap;
         };
 
-        function startAnimation() {
+        function startTaxi() {
             var offset = 0;
             animationHandler = setInterval(function() {
                 newMap.getSource('taxi_point').setData({
@@ -122,43 +135,59 @@
 
         // main handler of animation
         var animationHandler;
-        var count = 10;
+        var counter = 1;
         $('#toggle').on('click', function () {
             // if there is class active when the button toggle is clicked, then stop animation
             // this means the button is clicked while the animation is running and thus the animation should be stopped
-            //if ($(this).hasClass('active')) {
-            //    clearInterval(animationHandler);
-                //$('#surcharge').text(vOffset + " " + hOffset);
-            //} else {
-                $.ajax({
-                    url: "/getTaxiData",
-                    type: "get",
-                    success: function(result){
-                        $('#surcharge').text(result);
-                    }
-                });
-                /*
-                var offset = 0;
+            if ($(this).hasClass('active')) {
+                $(this).text("Start");
+                clearInterval(animationHandler);
+            } else {
+                $(this).text("Stop");
+                animate();
                 animationHandler = setInterval(function() {
-                    $.ajax({
-                        url: "/getTaxiData",
-                        type: "get",
-                        data: { timestamp: "20170314_17" + count + "00"},
-                        success: function(result){
-                            newMap.getSource('taxi_point').setData(result);
-                        }
-                    });
-                    count = count + 1;
-                    if (count > 59) {
-                        count = 10;
-                    }
-                }, 500);
-                */
-                // start animating airplane
-                animateAirplane();
-            //}
+                    animate();
+                }, 5000);
+            }
         });
 
+        function animate() {
+            $.ajax({
+                url: "/getSurchargeData",
+                type: "get",
+                data: { c : counter},
+                success: function(result){
+                    var res = result.split(",");
+                    $('#taxiAvailable').text(Math.floor(parseInt(res[3])/4));
+                    $('#passengerArrived').text(res[4]);
+                    var flightCodes = res[5].split("|")
+                    animateAirplane();
+                    $('#flightArrived').text(flightCodes.length);
+                    var flightCodesStr = ", ....";
+                    if (flightCodes.length > 4) {
+                        flightCodesStr = flightCodes.slice(0,3).toString() + flightCodesStr;
+                    } else {
+                        flightCodesStr = flightCodes.toString();
+                    }
+                    $('#flightCodes').text(flightCodesStr);
+                    // update weather
+                    updateRainEffect(parseInt(res[6]));
+                    $('#surcharge').text(res[7]);
+                }
+            });
+            counter = counter + 1;
+            if (counter > 20) {
+                counter = 1;
+            }
+            $.ajax({
+                url: "/static/taxi1.json",
+                type: "get",
+                data: { c : counter},
+                success: function(result){
+                    newMap.getSource('taxi_point').setData("http://localhost:8080/static/taxi" + counter + ".json");
+                }
+            });
+        }
         var planeCounter = 0;
         // Animate airplane arrival
         function animateAirplane() {
@@ -202,6 +231,26 @@
                     clearInterval(planeHandler);
                 };
             }, 200);
+        }
+
+        function updateRainEffect(nbRain) {
+            var weather = document.getElementById("weather")
+            weather.innerHTML = "";
+            var nbSunny = 4 - nbRain;
+            for (i = 0; i < nbRain; i++) {
+                weather.appendChild(createNewImgElement("/static/raining.jpeg"));
+            }
+            for (i = 0; i < nbSunny; i++) {
+                weather.appendChild(createNewImgElement("/static/sunny.png"));
+            }
+        }
+
+        function createNewImgElement(source) {
+            var elem = document.createElement("img");
+            elem.setAttribute("height", "33px");
+            elem.setAttribute("width", "36px");
+            elem.src = source;
+            return elem;
         }
     </script>
 
