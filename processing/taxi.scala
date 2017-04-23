@@ -96,9 +96,9 @@ val extractArrivalTime = udf((gate: String, runway: String, published: String)
     })
 
 // determine flight arrival time based on extractArrivalTime function
-val flightdf_arrTime = flightdf.withColumn("arrivalTime", extractArrivalTime($"gateArrival", $"runwayArrival", $"publishedArrival")).select(
-    flightdf.col("*"), $"arrivalTime".alias("arrivalDateHour")).na.fill("NA")
-
+var flightdf_arrTime = flightdf.withColumn("arrivalTime", extractArrivalTime($"gateArrival", $"runwayArrival", $"publishedArrival")).select(
+    flightdf.col("*"), $"arrivalTime".alias("arrivalDateHour")).na.fill("")
+flightdf_arrTime = flightdf_arrTime.select($"planeType")
 // show flight data frame after adding arrival time
 flightdf_arrTime.show()
 
@@ -115,7 +115,7 @@ val rdd = data.map(row => Row(row(0),row(1),row(2)))
 val schema = new StructType().add(StructField("iataCode", StringType, true)).add(
     StructField("nbPassenger", StringType, true)).add(StructField("name", StringType, true))
 
-val planeTypeDf = sqlContext.createDataFrame(rdd, schema).na.fill({"" => "NA"})
+val planeTypeDf = sqlContext.createDataFrame(rdd, schema).na.fill("NA")
 planeTypeDf.show()
 
 /***** Get passenger number from the static mapping of plane type to passenger number ****/

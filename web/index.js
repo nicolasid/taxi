@@ -78,14 +78,6 @@ app.get('/getSurchargeData', function (req, res) {
 });
 
 
-app.get('/getTaxiData', function (req, res) {
-    var urlRequest = "http://localhost:50075/webhdfs/v1/project/surcharge/taxi1.json?op=OPEN&namenoderpcaddress=localhost:8020&offset=0";
-    xmlHttp.open("GET", urlRequest, false);
-    xmlHttp.send(null);
-    res.writeHead(200, { 'Content-Type': 'text/plain' }); 
-    res.end(xmlHttp.responseText);
-});
-
 // host static files
 app.use('/static', express.static('public'));
 
